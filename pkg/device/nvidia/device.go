@@ -127,6 +127,7 @@ func (dev *NvidiaGPUDevices) GetNodeDevices(n corev1.Node) ([]*api.DeviceInfo, e
 		klog.InfoS("no gpu device found", "node", n.Name, "device annotation", devEncoded)
 		return []*api.DeviceInfo{}, errors.New("no gpu found on node")
 	}
+
 	devDecoded := util.EncodeNodeDevices(nodedevices)
 	klog.V(5).InfoS("nodes device information", "node", n.Name, "nodedevices", devDecoded)
 	return nodedevices, nil
@@ -142,33 +143,40 @@ func (dev *NvidiaGPUDevices) MutateAdmission(ctr *corev1.Container) (bool, error
 		})
 	}
 
-	_, resourceNameOK := ctr.Resources.Limits[corev1.ResourceName(ResourceName)]
-	if resourceNameOK {
-		return resourceNameOK, nil
-	}
-
-	_, resourceCoresOK := ctr.Resources.Limits[corev1.ResourceName(ResourceCores)]
-	_, resourceMemOK := ctr.Resources.Limits[corev1.ResourceName(ResourceMem)]
-	_, resourceMemPercentageOK := ctr.Resources.Limits[corev1.ResourceName(ResourceMemPercentage)]
-
-	if resourceCoresOK || resourceMemOK || resourceMemPercentageOK {
-		if config.DefaultResourceNum > 0 {
-			ctr.Resources.Limits[corev1.ResourceName(ResourceName)] = *resource.NewQuantity(int64(config.DefaultResourceNum), resource.BinarySI)
-			resourceNameOK = true
+	resourceNames := strings.Split(ResourceName, ";")
+	for _, resName := range resourceNames {
+		_, resourceNameOK := ctr.Resources.Limits[corev1.ResourceName(resName)]
+		if resourceNameOK {
+			return resourceNameOK, nil
 		}
 	}
 
-	if !resourceNameOK && OverwriteEnv {
-		ctr.Env = append(ctr.Env, corev1.EnvVar{
-			Name:  "NVIDIA_VISIBLE_DEVICES",
-			Value: "none",
-		})
-	}
-	return resourceNameOK, nil
+	// _, resourceCoresOK := ctr.Resources.Limits[corev1.ResourceName(ResourceCores)]
+	// _, resourceMemOK := ctr.Resources.Limits[corev1.ResourceName(ResourceMem)]
+	// _, resourceMemPercentageOK := ctr.Resources.Limits[corev1.ResourceName(ResourceMemPercentage)]
+
+	// if resourceCoresOK || resourceMemOK || resourceMemPercentageOK {
+	// 	if config.DefaultResourceNum > 0 {
+	// 		ctr.Resources.Limits[corev1.ResourceName(ResourceName)] = *resource.NewQuantity(int64(config.DefaultResourceNum), resource.BinarySI)
+	// 		resourceNameOK = true
+	// 	}
+	// }
+
+	// if !resourceNameOK && OverwriteEnv {
+	// 	ctr.Env = append(ctr.Env, corev1.EnvVar{
+	// 		Name:  "NVIDIA_VISIBLE_DEVICES",
+	// 		Value: "none",
+	// 	})
+	// }
+	// return resourceNameOK, nil
+	return false, nil
 }
 
-func checkGPUtype(annos map[string]string, cardtype string) bool {
+func checkGPUtype(annos map[string]string, resourceGpuType, cardtype string) bool {
 	cardtype = strings.ToUpper(cardtype)
+	if resourceGpuType != "" {
+		return strings.Contains(cardtype, strings.ToUpper(resourceGpuType))
+	}
 	if inuse, ok := annos[GPUInUse]; ok {
 		useTypes := strings.Split(inuse, ",")
 		if !ContainsSliceFunc(useTypes, func(useType string) bool {
@@ -185,6 +193,7 @@ func checkGPUtype(annos map[string]string, cardtype string) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -210,7 +219,7 @@ func assertNuma(annos map[string]string) bool {
 
 func (dev *NvidiaGPUDevices) CheckType(annos map[string]string, d util.DeviceUsage, n util.ContainerDeviceRequest) (bool, bool, bool) {
 	if strings.Compare(n.Type, NvidiaGPUDevice) == 0 {
-		return true, checkGPUtype(annos, d.Type), assertNuma(annos)
+		return true, checkGPUtype(annos, n.GpuType, d.Type), assertNuma(annos)
 	}
 	return false, false, false
 }
@@ -258,14 +267,31 @@ func (dev *NvidiaGPUDevices) PatchAnnotations(annoinput *map[string]string, pd u
 }
 
 func (dev *NvidiaGPUDevices) GenerateResourceRequests(ctr *corev1.Container) util.ContainerDeviceRequest {
-	resourceName := corev1.ResourceName(ResourceName)
+
+	// var
+	var v resource.Quantity
+	var ok bool
+	var gpuType string
+	resourceNames := strings.Split(ResourceName, ";")
+
 	resourceMem := corev1.ResourceName(ResourceMem)
 	resourceMemPercentage := corev1.ResourceName(ResourceMemPercentage)
 	resourceCores := corev1.ResourceName(ResourceCores)
-	v, ok := ctr.Resources.Limits[resourceName]
-	if !ok {
-		v, ok = ctr.Resources.Requests[resourceName]
+	for _, resName := range resourceNames {
+		resourceName := corev1.ResourceName(resName)
+		v, ok = ctr.Resources.Limits[resourceName]
+		if ok {
+			gpuType = util.GetGpuTypeFromResourceName(resName)
+			break
+		} else {
+			v, ok = ctr.Resources.Requests[resourceName]
+			if ok {
+				gpuType = util.GetGpuTypeFromResourceName(resName)
+				break
+			}
+		}
 	}
+
 	if ok {
 		if n, ok := v.AsInt64(); ok {
 			memnum := 0
@@ -311,6 +337,7 @@ func (dev *NvidiaGPUDevices) GenerateResourceRequests(ctr *corev1.Container) uti
 			return util.ContainerDeviceRequest{
 				Nums:             int32(n),
 				Type:             NvidiaGPUDevice,
+				GpuType:          gpuType,
 				Memreq:           int32(memnum),
 				MemPercentagereq: int32(mempnum),
 				Coresreq:         int32(corenum),

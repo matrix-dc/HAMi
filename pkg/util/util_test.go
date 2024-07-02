@@ -171,3 +171,10 @@ func Test_DecodePodDevices(t *testing.T) {
 		})
 	}
 }
+
+func Test_GetGpuTypeFromResourceName(t *testing.T) {
+	resName := "nvidia.com/gpu-h100"
+	gpuType := GetGpuTypeFromResourceName(resName)
+
+	assert.Equal(t, "h100", gpuType)
+}
