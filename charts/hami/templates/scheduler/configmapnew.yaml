@@ -30,8 +30,10 @@ data:
       tlsConfig:
         insecure: true
       managedResources:
-      - name: {{ .Values.resourceName }}
+      {{- range ( split ";" $.Values.resourceName ) }}
+      - name: {{ . }}
         ignoredByScheduler: true
+      {{- end }}
       - name: {{ .Values.resourceMem }}
         ignoredByScheduler: true
       - name: {{ .Values.resourceCores }}

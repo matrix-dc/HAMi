@@ -25,10 +25,12 @@ data:
                     "insecure": true
                 },
                 "managedResources": [
+                    {{- range ( split ";" $.Values.resourceName ) }}
                     {
-                        "name": "{{ .Values.resourceName }}",
+                        "name": "{{ . }}",
                         "ignoredByScheduler": true
                     },
+                    {{- end }}
                     {
                         "name": "{{ .Values.resourceMem }}",
                         "ignoredByScheduler": true

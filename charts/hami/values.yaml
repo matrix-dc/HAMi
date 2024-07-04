@@ -6,7 +6,9 @@ imagePullSecrets: [ ]
 version: "v2.3.12"
 
 #Nvidia GPU Parameters
-resourceName: "nvidia.com/gpu"
+# resourceName: "nvidia.com/gpu-h100;nvidia.com/gpu-h20"
+# resourceName: "nvidia.com/gpu-h20"
+resourceName: "nvidia.com/gpu-h100"
 resourceMem: "nvidia.com/gpumem"
 resourceMemPercentage: "nvidia.com/gpumem-percentage"
 resourceCores: "nvidia.com/gpucores"
@@ -77,6 +79,7 @@ scheduler:
   podAnnotations: {}
   #nodeSelector: 
   #  gpu: "on"
+  #  nvidia-device: "h20"
   tolerations: []
   #serviceAccountName: "hami-vgpu-scheduler-sa"
   customWebhook:
@@ -118,6 +121,7 @@ devicePlugin:
   disablecorelimit: "false"
   extraArgs:
     - -v=false
+    # - --custom-device-type=NVIDIA H20 96GB HBM3
   
   service:
     httpPort: 31992
@@ -128,5 +132,6 @@ devicePlugin:
   podAnnotations: {}
   nvidianodeSelector:
     gpu: "on"
+    # nvidia-device: "h20"
   tolerations: []
 
