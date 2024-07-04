@@ -1,3 +1,4 @@
+{{- if .Values.scheduler.enabled }}
 {{- if .Values.scheduler.kubeScheduler.enabled }}
 apiVersion: v1
 kind: ConfigMap
@@ -53,4 +54,5 @@ data:
         ignoredByScheduler: true
       - name: {{ .Values.ascendResourceName }}
         ignoredByScheduler: true
+{{- end }}
 {{- end }}
