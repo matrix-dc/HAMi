@@ -66,6 +66,11 @@ func addFlags() []cli.Flag {
 			Value: "nvidia.com/gpu",
 			Usage: "the name of field for number GPU visible in container",
 		},
+		&cli.StringFlag{
+			Name:  "custom-device-type",
+			Value: "NVIDIA H100 80GB HBM3",
+			Usage: "the name of field for custom device type for debugger",
+		},
 	}
 	return addition
 }
@@ -146,6 +151,9 @@ func generateDeviceConfigFromNvidia(cfg *spec.Config, c *cli.Context, flags []cl
 			}
 			if strings.Compare(n, "resource-name") == 0 {
 				updateFromCLIFlag(&devcfg.ResourceName, c, n)
+			}
+			if strings.Compare(n, "custom-device-type") == 0 {
+				updateFromCLIFlag(&util.CustomModelName, c, n)
 			}
 		}
 	}

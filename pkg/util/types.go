@@ -74,6 +74,7 @@ var (
 	NodeName            string
 	RuntimeSocketFlag   string
 	DisableCoreLimit    *bool
+	CustomModelName     *string
 )
 
 //	type ContainerDevices struct {

@@ -92,7 +92,7 @@ func parseNvidiaNumaInfo(idx int, nvidiaTopoStr string) (int, error) {
 	return result, nil
 }
 
-func (plugin *NvidiaDevicePlugin) getAPIDevices() *[]*api.DeviceInfo {
+func (plugin *NvidiaDevicePlugin) getAPIDevices(customeModel string) *[]*api.DeviceInfo {
 	devs := plugin.Devices()
 	nvml.Init()
 	res := make([]*api.DeviceInfo, 0, len(devs))
@@ -146,12 +146,18 @@ func (plugin *NvidiaDevicePlugin) getAPIDevices() *[]*api.DeviceInfo {
 		if err != nil {
 			klog.ErrorS(err, "failed to get numa information", "idx", idx)
 		}
+		var deviceType string
+		if customeModel != "" {
+			deviceType = fmt.Sprintf("%v-%v", "NVIDIA", customeModel)
+		} else {
+			deviceType = fmt.Sprintf("%v-%v", "NVIDIA", Model)
+		}
 		res = append(res, &api.DeviceInfo{
 			Id:      UUID,
 			Count:   int32(*util.DeviceSplitCount),
 			Devmem:  registeredmem,
 			Devcore: int32(*util.DeviceCoresScaling * 100),
-			Type:    fmt.Sprintf("%v-%v", "NVIDIA", Model),
+			Type:    deviceType,
 			Numa:    numa,
 			Health:  health,
 		})
@@ -162,7 +168,7 @@ func (plugin *NvidiaDevicePlugin) getAPIDevices() *[]*api.DeviceInfo {
 }
 
 func (plugin *NvidiaDevicePlugin) RegistrInAnnotation() error {
-	devices := plugin.getAPIDevices()
+	devices := plugin.getAPIDevices(*util.CustomModelName)
 	klog.InfoS("start working on the devices", "devices", devices)
 	annos := make(map[string]string)
 	node, err := util.GetNode(util.NodeName)
