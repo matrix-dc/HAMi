@@ -1,3 +1,4 @@
+{{- if .Values.scheduler.enabled }}
 {{- if .Values.scheduler.kubeScheduler.enabled }}
 apiVersion: v1
 kind: ConfigMap
@@ -29,8 +30,10 @@ data:
       tlsConfig:
         insecure: true
       managedResources:
-      - name: {{ .Values.resourceName }}
+      {{- range ( split ";" $.Values.resourceName ) }}
+      - name: {{ . }}
         ignoredByScheduler: true
+      {{- end }}
       - name: {{ .Values.resourceMem }}
         ignoredByScheduler: true
       - name: {{ .Values.resourceCores }}
@@ -53,4 +56,5 @@ data:
         ignoredByScheduler: true
       - name: {{ .Values.ascendResourceName }}
         ignoredByScheduler: true
+{{- end }}
 {{- end }}

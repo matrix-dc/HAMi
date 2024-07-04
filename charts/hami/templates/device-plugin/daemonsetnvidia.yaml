@@ -1,3 +1,4 @@
+{{- if .Values.devicePlugin.enabled }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -143,3 +144,4 @@ spec:
       {{- if .Values.devicePlugin.tolerations }}
       tolerations: {{ toYaml .Values.devicePlugin.tolerations | nindent 8 }}
       {{- end }}
+{{- end }}

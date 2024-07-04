@@ -1,3 +1,4 @@
+{{- if .Values.scheduler.enabled }}
 {{- if .Values.scheduler.kubeScheduler.enabled }}
 apiVersion: v1
 kind: ConfigMap
@@ -24,10 +25,12 @@ data:
                     "insecure": true
                 },
                 "managedResources": [
+                    {{- range ( split ";" $.Values.resourceName ) }}
                     {
-                        "name": "{{ .Values.resourceName }}",
+                        "name": "{{ . }}",
                         "ignoredByScheduler": true
                     },
+                    {{- end }}
                     {
                         "name": "{{ .Values.resourceMem }}",
                         "ignoredByScheduler": true
@@ -77,4 +80,5 @@ data:
             }
         ]
     }
+{{- end }}
 {{- end }}
