@@ -92,7 +92,7 @@ func parseNvidiaNumaInfo(idx int, nvidiaTopoStr string) (int, error) {
 	return result, nil
 }
 
-func (plugin *NvidiaDevicePlugin) getAPIDevices(customeModel string) *[]*api.DeviceInfo {
+func (plugin *NvidiaDevicePlugin) getAPIDevices(customModel string) *[]*api.DeviceInfo {
 	devs := plugin.Devices()
 	nvml.Init()
 	res := make([]*api.DeviceInfo, 0, len(devs))
@@ -147,8 +147,8 @@ func (plugin *NvidiaDevicePlugin) getAPIDevices(customeModel string) *[]*api.Dev
 			klog.ErrorS(err, "failed to get numa information", "idx", idx)
 		}
 		var deviceType string
-		if customeModel != "" {
-			deviceType = fmt.Sprintf("%v-%v", "NVIDIA", customeModel)
+		if customModel != "" {
+			deviceType = fmt.Sprintf("%v-%v", "NVIDIA", customModel)
 		} else {
 			deviceType = fmt.Sprintf("%v-%v", "NVIDIA", Model)
 		}

@@ -134,6 +134,7 @@ func (dev *NvidiaGPUDevices) GetNodeDevices(n corev1.Node) ([]*api.DeviceInfo, e
 }
 
 func (dev *NvidiaGPUDevices) MutateAdmission(ctr *corev1.Container) (bool, error) {
+	var resourceNameOK bool
 	/*gpu related */
 	priority, ok := ctr.Resources.Limits[corev1.ResourceName(ResourcePriority)]
 	if ok {
@@ -142,15 +143,19 @@ func (dev *NvidiaGPUDevices) MutateAdmission(ctr *corev1.Container) (bool, error
 			Value: fmt.Sprint(priority.Value()),
 		})
 	}
-
+	// scheduler 的ResourceName是包含多种device resourceName信息
+	// 需要逐一从pod container的limits中去匹配
+	// 从scheduler找到任意满足的resourceName则认为true
 	resourceNames := strings.Split(ResourceName, ";")
 	for _, resName := range resourceNames {
-		_, resourceNameOK := ctr.Resources.Limits[corev1.ResourceName(resName)]
+		_, resourceNameOK = ctr.Resources.Limits[corev1.ResourceName(resName)]
 		if resourceNameOK {
 			return resourceNameOK, nil
 		}
 	}
 
+	// 由于scheduler实现为多deviceType支持，因此不能用scheduler的ResourceName来给pod container resource填入默认值
+	// 因此这部分代码注释掉，意味着没有任何resourceName的调度都无效
 	// _, resourceCoresOK := ctr.Resources.Limits[corev1.ResourceName(ResourceCores)]
 	// _, resourceMemOK := ctr.Resources.Limits[corev1.ResourceName(ResourceMem)]
 	// _, resourceMemPercentageOK := ctr.Resources.Limits[corev1.ResourceName(ResourceMemPercentage)]
@@ -162,21 +167,17 @@ func (dev *NvidiaGPUDevices) MutateAdmission(ctr *corev1.Container) (bool, error
 	// 	}
 	// }
 
-	// if !resourceNameOK && OverwriteEnv {
-	// 	ctr.Env = append(ctr.Env, corev1.EnvVar{
-	// 		Name:  "NVIDIA_VISIBLE_DEVICES",
-	// 		Value: "none",
-	// 	})
-	// }
-	// return resourceNameOK, nil
-	return false, nil
+	if !resourceNameOK && OverwriteEnv {
+		ctr.Env = append(ctr.Env, corev1.EnvVar{
+			Name:  "NVIDIA_VISIBLE_DEVICES",
+			Value: "none",
+		})
+	}
+	return resourceNameOK, nil
 }
 
 func checkGPUtype(annos map[string]string, resourceGpuType, cardtype string) bool {
 	cardtype = strings.ToUpper(cardtype)
-	if resourceGpuType != "" {
-		return strings.Contains(cardtype, strings.ToUpper(resourceGpuType))
-	}
 	if inuse, ok := annos[GPUInUse]; ok {
 		useTypes := strings.Split(inuse, ",")
 		if !ContainsSliceFunc(useTypes, func(useType string) bool {
@@ -193,7 +194,12 @@ func checkGPUtype(annos map[string]string, resourceGpuType, cardtype string) boo
 			return false
 		}
 	}
-
+	// resourceGpuType来源于pod container resource的limits/requests信息
+	// eg: "nvidia.com/gpu-h100", 则resourceGpuType=h100
+	// 在目标node的device cardtype中 查到了resourceGpuType，则判定node满足条件
+	if resourceGpuType != "" {
+		return strings.Contains(cardtype, strings.ToUpper(resourceGpuType))
+	}
 	return true
 }
 
@@ -272,11 +278,11 @@ func (dev *NvidiaGPUDevices) GenerateResourceRequests(ctr *corev1.Container) uti
 	var v resource.Quantity
 	var ok bool
 	var gpuType string
-	resourceNames := strings.Split(ResourceName, ";")
 
-	resourceMem := corev1.ResourceName(ResourceMem)
-	resourceMemPercentage := corev1.ResourceName(ResourceMemPercentage)
-	resourceCores := corev1.ResourceName(ResourceCores)
+	// scheduler 的ResourceName是包含多种device resourceName信息
+	// 需要逐一从pod container的Limits/Requests中去匹配
+	// 并找出对应的gpuType，eg: h100/h20等或者为空
+	resourceNames := strings.Split(ResourceName, ";")
 	for _, resName := range resourceNames {
 		resourceName := corev1.ResourceName(resName)
 		v, ok = ctr.Resources.Limits[resourceName]
@@ -292,6 +298,9 @@ func (dev *NvidiaGPUDevices) GenerateResourceRequests(ctr *corev1.Container) uti
 		}
 	}
 
+	resourceMem := corev1.ResourceName(ResourceMem)
+	resourceMemPercentage := corev1.ResourceName(ResourceMemPercentage)
+	resourceCores := corev1.ResourceName(ResourceCores)
 	if ok {
 		if n, ok := v.AsInt64(); ok {
 			memnum := 0
