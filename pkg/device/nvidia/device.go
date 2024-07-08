@@ -133,8 +133,11 @@ func (dev *NvidiaGPUDevices) GetNodeDevices(n corev1.Node) ([]*api.DeviceInfo, e
 	return nodedevices, nil
 }
 
+// TODO 暂时只支持nvidia.com/gpu-xxx: 2，这一种配置
+// 当 nvidia.com/gpu-xxx: 0的时候，env要设置NVIDIA_VISIBLE_DEVICES: none
 func (dev *NvidiaGPUDevices) MutateAdmission(ctr *corev1.Container) (bool, error) {
 	var resourceNameOK bool
+	var quantity resource.Quantity
 	/*gpu related */
 	priority, ok := ctr.Resources.Limits[corev1.ResourceName(ResourcePriority)]
 	if ok {
@@ -148,8 +151,18 @@ func (dev *NvidiaGPUDevices) MutateAdmission(ctr *corev1.Container) (bool, error
 	// 从scheduler找到任意满足的resourceName则认为true
 	resourceNames := strings.Split(ResourceName, ";")
 	for _, resName := range resourceNames {
-		_, resourceNameOK = ctr.Resources.Limits[corev1.ResourceName(resName)]
+		quantity, resourceNameOK = ctr.Resources.Limits[corev1.ResourceName(resName)]
 		if resourceNameOK {
+			nvidiaVisibleDevices := false
+			if n, ok := quantity.AsInt64(); ok && n > 0 {
+				nvidiaVisibleDevices = true
+			}
+			if !nvidiaVisibleDevices && OverwriteEnv {
+				ctr.Env = append(ctr.Env, corev1.EnvVar{
+					Name:  "NVIDIA_VISIBLE_DEVICES",
+					Value: "none",
+				})
+			}
 			return resourceNameOK, nil
 		}
 	}
