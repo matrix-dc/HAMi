@@ -70,6 +70,8 @@ scheduler:
     extraArgs:
       - --policy-config-file=/config/config.json
       - -v=4
+    plugins:
+      enabled: true
   extender:
     image: "projecthami/hami"
     imagePullPolicy: IfNotPresent
