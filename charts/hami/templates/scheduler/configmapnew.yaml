@@ -16,9 +16,23 @@ data:
     {{- end }}
     kind: KubeSchedulerConfiguration
     leaderElection:
-      leaderElect: false
+      leaderElect: {{ .Values.scheduler.leaderElect }}
+      resourceName: {{ .Values.schedulerName }}
     profiles:
     - schedulerName: {{ .Values.schedulerName }}
+      {{- if .Values.scheduler.kubeScheduler.plugins.enabled }}
+      plugins:
+        filter:
+          enabled:
+            - name: hwameistor-scheduler-plugin
+        reserve:
+          enabled:
+            - name: hwameistor-scheduler-plugin
+        score:
+          enabled:
+            - name: hwameistor-scheduler-plugin
+              weight: 10
+      {{- end }}
     extenders:
     - urlPrefix: "https://127.0.0.1:443"
       filterVerb: filter

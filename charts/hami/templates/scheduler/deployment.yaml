@@ -28,6 +28,16 @@ spec:
       annotations: {{ toYaml .Values.scheduler.podAnnotations | nindent 8 }}
       {{- end }}
     spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: Exists
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: Exists
       {{- include "hami-vgpu.imagePullSecrets" . | nindent 6}}
       serviceAccountName: {{ include "hami-vgpu.scheduler" . }}
       priorityClassName: system-node-critical
