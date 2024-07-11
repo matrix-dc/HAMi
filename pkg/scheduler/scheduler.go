@@ -18,6 +18,7 @@ package scheduler
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -432,7 +433,7 @@ RelaseNodeLocks:
 
 func (s *Scheduler) Filter(args extenderv1.ExtenderArgs) (*extenderv1.ExtenderFilterResult, error) {
 	klog.InfoS("begin schedule filter", "pod", args.Pod.Name, "uuid", args.Pod.UID, "namespaces", args.Pod.Namespace)
-	nums := k8sutil.Resourcereqs(args.Pod)
+	gpuType, nums := k8sutil.Resourcereqs(args.Pod)
 	total := 0
 	for _, n := range nums {
 		for _, k := range n {
@@ -464,6 +465,7 @@ func (s *Scheduler) Filter(args extenderv1.ExtenderArgs) (*extenderv1.ExtenderFi
 	if len((*nodeScores).NodeList) == 0 {
 		return &extenderv1.ExtenderFilterResult{
 			FailedNodes: failedNodes,
+			Error:       fmt.Sprintf("Insufficient %s", gpuType),
 		}, nil
 	}
 	klog.V(4).Infoln("nodeScores_len=", len((*nodeScores).NodeList))
