@@ -24,7 +24,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-func Resourcereqs(pod *corev1.Pod) (counts util.PodDeviceRequests) {
+func Resourcereqs(pod *corev1.Pod) (gpuType string, counts util.PodDeviceRequests) {
 	counts = make(util.PodDeviceRequests, len(pod.Spec.Containers))
 	//Count Nvidia GPU
 	for i := 0; i < len(pod.Spec.Containers); i++ {
@@ -33,12 +33,13 @@ func Resourcereqs(pod *corev1.Pod) (counts util.PodDeviceRequests) {
 		for idx, val := range devices {
 			request := val.GenerateResourceRequests(&pod.Spec.Containers[i])
 			if request.Nums > 0 {
-				counts[i][idx] = val.GenerateResourceRequests(&pod.Spec.Containers[i])
+				counts[i][idx] = request
+				gpuType = request.GpuType
 			}
 		}
 	}
-	klog.InfoS("collect requestreqs", "counts", counts)
-	return counts
+	klog.InfoS("collect requestreqs", "gpuType", gpuType, "counts", counts)
+	return gpuType, counts
 }
 
 func IsPodInTerminatedState(pod *corev1.Pod) bool {

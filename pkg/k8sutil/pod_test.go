@@ -124,7 +124,7 @@ func Test_Resourcereqs(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := Resourcereqs(test.args)
+			_, got := Resourcereqs(test.args)
 			assert.DeepEqual(t, test.want, got)
 		})
 	}
