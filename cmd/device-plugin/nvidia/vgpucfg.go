@@ -68,7 +68,7 @@ func addFlags() []cli.Flag {
 		},
 		&cli.StringFlag{
 			Name:  "custom-device-type",
-			Value: "NVIDIA H100 80GB HBM3",
+			Value: "", // NVIDIA H100 80GB HBM3
 			Usage: "the name of field for custom device type for debugger",
 		},
 	}
