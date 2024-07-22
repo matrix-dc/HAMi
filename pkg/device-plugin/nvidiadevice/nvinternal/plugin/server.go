@@ -363,7 +363,10 @@ func (plugin *NvidiaDevicePlugin) Allocate(ctx context.Context, reqs *kubeletdev
 			}
 			cacheFileHostDirectory := fmt.Sprintf("%s/vgpu/containers/%s_%s", hostHookPath, current.UID, currentCtr.Name)
 			os.RemoveAll(cacheFileHostDirectory)
-
+			// set libvgpu log level
+			if util.LibcudaLogLevel != nil {
+				response.Envs["LIBCUDA_LOG_LEVEL"] = fmt.Sprint(*util.LibcudaLogLevel)
+			}
 			os.MkdirAll(cacheFileHostDirectory, 0777)
 			os.Chmod(cacheFileHostDirectory, 0777)
 			os.MkdirAll("/tmp/vgpulock", 0777)
