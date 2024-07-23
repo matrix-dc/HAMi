@@ -455,7 +455,8 @@ func (s *Scheduler) Filter(args extenderv1.ExtenderArgs) (*extenderv1.ExtenderFi
 		return nil, err
 	}
 	if len(failedNodes) != 0 {
-		klog.V(5).InfoS("getNodesUsage failed nodes", "nodes", failedNodes)
+		klog.V(5).InfoS("getNodesUsage failed nodes", "failedNodes", failedNodes, "nodeUsage", nodeUsage,
+			"nodeNames", args.NodeNames, "pod.name", args.Pod.Name, "pod.namespace", args.Pod.Namespace)
 	}
 	nodeScores, err := s.calcScore(nodeUsage, nums, annos, args.Pod)
 	if err != nil {

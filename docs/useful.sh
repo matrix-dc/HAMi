@@ -1,12 +1,6 @@
 # install scheduler use hwameistor scheduler as default
 # 
-helm upgrade --install  hami-scheduler  hami \
- --set scheduler.kubeScheduler.image=ghcr.m.daocloud.io/hwameistor/scheduler  \
- --set scheduler.kubeScheduler.imageTag=v1.24.0 \
- --set scheduler.enabled=true --set scheduler.kubeScheduler.plugins.enabled=true  \
- --set devicePlugin.enabled=false   --set version=v2.3.27 \
- --set scheduler.extender.image=projecthami/hami\
- -n kube-system
+helm upgrade --install  hami-scheduler  hami  --set scheduler.kubeScheduler.useDefault=false --set scheduler.kubeScheduler.image=ghcr.m.daocloud.io/hwameistor/scheduler  --set scheduler.kubeScheduler.imageTag=v1.24.0 --set scheduler.enabled=true --set scheduler.kubeScheduler.plugins.enabled=true  --set devicePlugin.enabled=false   --set version=v2.3.29  --set scheduler.extender.image=harbor.43.143.130.168.nip.io:30443/system_containers/hami  -n kube-system
 
 # install scheduler use kubernetes default scheduler
 # 

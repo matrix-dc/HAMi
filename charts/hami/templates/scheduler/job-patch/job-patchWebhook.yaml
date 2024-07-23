@@ -39,7 +39,7 @@ spec:
           imagePullPolicy: {{ .Values.scheduler.patch.imagePullPolicy }}
           args:
             - patch
-            - --webhook-name={{ include "hami-vgpu.scheduler.webhook" . }}
+            - --webhook-name=z{{ include "hami-vgpu.scheduler.webhook" . }}
             - --namespace={{ .Release.Namespace }}
             - --patch-validating=false
             - --secret-name={{ include "hami-vgpu.scheduler.tls" . }}
