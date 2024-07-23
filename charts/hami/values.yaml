@@ -114,7 +114,7 @@ devicePlugin:
   monitorimage: "projecthami/hami"
   monitorctrPath: /usr/local/vgpu/containers
   imagePullPolicy: IfNotPresent
-  deviceSplitCount: 10
+  deviceSplitCount: 1
   deviceMemoryScaling: 1
   deviceCoreScaling: 1
   runtimeClassName: ""
@@ -123,7 +123,7 @@ devicePlugin:
   extraArgs:
     - -v=false
     - --custom-device-type=H100 # need edit when apply device-plugin
-    # - --libcuda-log-level=0 # libcuda log level, 0,1 err; 2 msg/warn;3 info; 4 debug; need edit when apply device-plugin
+    - --libcuda-log-level=0 # libcuda log level, 0,1 err; 2 msg/warn;3 info; 4 debug;
   
   service:
     httpPort: 31992 # need edit when apply device-plugin

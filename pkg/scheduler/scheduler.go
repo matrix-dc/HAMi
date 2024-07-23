@@ -466,7 +466,7 @@ func (s *Scheduler) Filter(args extenderv1.ExtenderArgs) (*extenderv1.ExtenderFi
 	if len((*nodeScores).NodeList) == 0 {
 		return &extenderv1.ExtenderFilterResult{
 			FailedNodes: failedNodes,
-			Error:       fmt.Sprintf(" nodes: %v, %d nodes Insufficient %s.", *args.NodeNames, len(*args.NodeNames), gpuType),
+			Error:       fmt.Sprintf(" nodes: %v, %d nodes Insufficient %s. other nodes Insufficient cpu/memory/others", *args.NodeNames, len(*args.NodeNames), gpuType),
 		}, nil
 	}
 	klog.V(4).Infoln("nodeScores_len=", len((*nodeScores).NodeList))
