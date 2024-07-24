@@ -83,6 +83,7 @@ scheduler:
   #  nvidia-device: "h20"
   tolerations: []
   #serviceAccountName: "hami-vgpu-scheduler-sa"
+  webhookPrefix: zzz- # in order to put webhook at the end
   customWebhook:
     enabled: false
     # must be an endpoint using https.
