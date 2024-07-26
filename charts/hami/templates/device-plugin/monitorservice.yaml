@@ -16,10 +16,9 @@ spec:
   externalTrafficPolicy: Local
   selector:
     app.kubernetes.io/component: hami-device-plugin
-  type: NodePort
+  type: ClusterIP
   ports:
     - name: monitorport
       port: {{ .Values.devicePlugin.service.httpPort }}
       targetPort: 9394
-      nodePort: {{ .Values.devicePlugin.service.httpPort }}
 {{- end }}

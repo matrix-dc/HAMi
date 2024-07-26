@@ -13,17 +13,15 @@ metadata:
   annotations: {{ toYaml .Values.scheduler.service.annotations | nindent 4 }}
   {{- end }}
 spec:
-  type: NodePort
+  type: ClusterIP
   ports:
     - name: http
       port: {{ .Values.scheduler.service.httpPort }}
       targetPort: 443
-      nodePort: {{ .Values.scheduler.service.schedulerPort }}
       protocol: TCP
     - name: monitor
       port: {{ .Values.scheduler.service.monitorPort }}
       targetPort: 9395
-      nodePort: {{ .Values.scheduler.service.monitorPort }}
       protocol: TCP
   selector:
     app.kubernetes.io/component: hami-scheduler
