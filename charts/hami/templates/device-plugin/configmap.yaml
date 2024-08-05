@@ -12,8 +12,8 @@ data:
         "nodeconfig": [
             {
                 "name": "m5-cloudinfra-online02",
-                "devicememoryscaling": 1.8,
-                "devicesplitcount": 10,
+                "devicememoryscaling": 1,
+                "devicesplitcount": 1,
                 "migstrategy":"none"
             }
         ]

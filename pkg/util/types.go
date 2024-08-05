@@ -75,6 +75,7 @@ var (
 	RuntimeSocketFlag   string
 	DisableCoreLimit    *bool
 	CustomModelName     *string
+	LibcudaLogLevel     *uint // set libvgpu LIBCUDA_LOG_LEVEL
 )
 
 //	type ContainerDevices struct {

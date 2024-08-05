@@ -71,6 +71,11 @@ func addFlags() []cli.Flag {
 			Value: "", // NVIDIA H100 80GB HBM3
 			Usage: "the name of field for custom device type for debugger",
 		},
+		&cli.UintFlag{
+			Name:  "libcuda-log-level",
+			Value: 1,
+			Usage: "set libvgpu log level",
+		},
 	}
 	return addition
 }
@@ -154,6 +159,10 @@ func generateDeviceConfigFromNvidia(cfg *spec.Config, c *cli.Context, flags []cl
 			}
 			if strings.Compare(n, "custom-device-type") == 0 {
 				updateFromCLIFlag(&util.CustomModelName, c, n)
+			}
+
+			if strings.Compare(n, "libcuda-log-level") == 0 {
+				updateFromCLIFlag(&util.LibcudaLogLevel, c, n)
 			}
 		}
 	}

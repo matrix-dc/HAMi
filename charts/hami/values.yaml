@@ -59,6 +59,7 @@ scheduler:
   kubeScheduler:
     # @param enabled indicate whether to run kube-scheduler container in the scheduler pod, it's true by default.
     enabled: true
+    useDefault: true
     imageTag: "v1.20.0"
     image: registry.cn-hangzhou.aliyuncs.com/google_containers/kube-scheduler
     imagePullPolicy: IfNotPresent
@@ -75,13 +76,14 @@ scheduler:
     imagePullPolicy: IfNotPresent
     extraArgs:
       - --debug
-      - -v=4
+      - -v=5
   podAnnotations: {}
   #nodeSelector: 
   #  gpu: "on"
   #  nvidia-device: "h20"
   tolerations: []
   #serviceAccountName: "hami-vgpu-scheduler-sa"
+  webhookPrefix: zzz- # in order to put webhook at the end
   customWebhook:
     enabled: false
     # must be an endpoint using https.
@@ -113,7 +115,7 @@ devicePlugin:
   monitorimage: "projecthami/hami"
   monitorctrPath: /usr/local/vgpu/containers
   imagePullPolicy: IfNotPresent
-  deviceSplitCount: 10
+  deviceSplitCount: 1
   deviceMemoryScaling: 1
   deviceCoreScaling: 1
   runtimeClassName: ""
@@ -121,7 +123,8 @@ devicePlugin:
   disablecorelimit: "false"
   extraArgs:
     - -v=false
-    - --custom-device-type=4090 # need edit when apply device-plugin
+    - --custom-device-type=H100 # need edit when apply device-plugin
+    - --libcuda-log-level=0 # libcuda log level, 0,1 err; 2 msg/warn;3 info; 4 debug;
   
   service:
     httpPort: 31992 # need edit when apply device-plugin
@@ -132,6 +135,6 @@ devicePlugin:
   podAnnotations: {}
   nvidianodeSelector:
     gpu: "on"
-    nvidia-device: "4090" # need edit when apply device-plugin
+    nvidia-device: "h100" # need edit when apply device-plugin
   tolerations: []
 
