@@ -14,7 +14,6 @@ metadata:
   annotations: {{ toYaml .Values.scheduler.service.annotations | nindent 4 }}
   {{- end }}
 spec:
-  externalTrafficPolicy: Local
   selector:
     app.kubernetes.io/component: hami-device-plugin
   type: ClusterIP
