@@ -28,21 +28,24 @@ import (
 )
 
 const (
-	NodeLockTime = "hami.io/mutex.lock"
 	MaxLockRetry = 5
 )
 
-func SetNodeLock(nodeName string, lockname string) error {
+var (
+	NodeLockEnbaled bool
+)
+
+func setNodeLock(nodeName string, lockname string) error {
 	ctx := context.Background()
 	node, err := client.GetClient().CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
-	if _, ok := node.ObjectMeta.Annotations[NodeLockTime]; ok {
+	if _, ok := node.ObjectMeta.Annotations[lockname]; ok {
 		return fmt.Errorf("node %s is locked", nodeName)
 	}
 	newNode := node.DeepCopy()
-	newNode.ObjectMeta.Annotations[NodeLockTime] = time.Now().Format(time.RFC3339)
+	newNode.ObjectMeta.Annotations[lockname] = time.Now().Format(time.RFC3339)
 	_, err = client.GetClient().CoreV1().Nodes().Update(ctx, newNode, metav1.UpdateOptions{})
 	for i := 0; i < MaxLockRetry && err != nil; i++ {
 		klog.ErrorS(err, "Failed to update node", "node", nodeName, "retry", i)
@@ -53,7 +56,7 @@ func SetNodeLock(nodeName string, lockname string) error {
 			continue
 		}
 		newNode := node.DeepCopy()
-		newNode.ObjectMeta.Annotations[NodeLockTime] = time.Now().Format(time.RFC3339)
+		newNode.ObjectMeta.Annotations[lockname] = time.Now().Format(time.RFC3339)
 		_, err = client.GetClient().CoreV1().Nodes().Update(ctx, newNode, metav1.UpdateOptions{})
 	}
 	if err != nil {
@@ -64,17 +67,21 @@ func SetNodeLock(nodeName string, lockname string) error {
 }
 
 func ReleaseNodeLock(nodeName string, lockname string) error {
+	if !NodeLockEnbaled {
+		klog.InfoS("nodeLock is diabled", "method", "ReleaseNodeLock", "nodeName", nodeName, "lockname", lockname)
+		return nil
+	}
 	ctx := context.Background()
 	node, err := client.GetClient().CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
-	if _, ok := node.ObjectMeta.Annotations[NodeLockTime]; !ok {
+	if _, ok := node.ObjectMeta.Annotations[lockname]; !ok {
 		klog.InfoS("Node lock not set", "node", nodeName)
 		return nil
 	}
 	newNode := node.DeepCopy()
-	delete(newNode.ObjectMeta.Annotations, NodeLockTime)
+	delete(newNode.ObjectMeta.Annotations, lockname)
 	_, err = client.GetClient().CoreV1().Nodes().Update(ctx, newNode, metav1.UpdateOptions{})
 	for i := 0; i < MaxLockRetry && err != nil; i++ {
 		klog.ErrorS(err, "Failed to update node", "node", nodeName, "retry", i)
@@ -85,7 +92,7 @@ func ReleaseNodeLock(nodeName string, lockname string) error {
 			continue
 		}
 		newNode := node.DeepCopy()
-		delete(newNode.ObjectMeta.Annotations, NodeLockTime)
+		delete(newNode.ObjectMeta.Annotations, lockname)
 		_, err = client.GetClient().CoreV1().Nodes().Update(ctx, newNode, metav1.UpdateOptions{})
 	}
 	if err != nil {
@@ -96,15 +103,20 @@ func ReleaseNodeLock(nodeName string, lockname string) error {
 }
 
 func LockNode(nodeName string, lockname string) error {
+	if !NodeLockEnbaled {
+		klog.InfoS("nodeLock is diabled", "method", "LockNode", "nodeName", nodeName, "lockname", lockname)
+		return nil
+	}
+
 	ctx := context.Background()
 	node, err := client.GetClient().CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
-	if _, ok := node.ObjectMeta.Annotations[NodeLockTime]; !ok {
-		return SetNodeLock(nodeName, lockname)
+	if _, ok := node.ObjectMeta.Annotations[lockname]; !ok {
+		return setNodeLock(nodeName, lockname)
 	}
-	lockTime, err := time.Parse(time.RFC3339, node.ObjectMeta.Annotations[NodeLockTime])
+	lockTime, err := time.Parse(time.RFC3339, node.ObjectMeta.Annotations[lockname])
 	if err != nil {
 		return err
 	}
@@ -115,7 +127,7 @@ func LockNode(nodeName string, lockname string) error {
 			klog.ErrorS(err, "Failed to release node lock", "node", nodeName)
 			return err
 		}
-		return SetNodeLock(nodeName, lockname)
+		return setNodeLock(nodeName, lockname)
 	}
 	return fmt.Errorf("node %s has been locked within 5 minutes", nodeName)
 }

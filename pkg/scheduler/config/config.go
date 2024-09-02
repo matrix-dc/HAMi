@@ -25,6 +25,7 @@ var (
 	DefaultCores       int32
 	DefaultResourceNum int32
 	MetricsBindAddress string
+	NodeLockEnbaled    bool
 
 	// NodeSchedulerPolicy is config this scheduler node to use `binpack` or `spread`. default value is binpack.
 	NodeSchedulerPolicy = policy.NodeSchedulerPolicyBinpack.String()

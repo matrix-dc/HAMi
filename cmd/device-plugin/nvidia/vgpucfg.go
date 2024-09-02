@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/Project-HAMi/HAMi/pkg/util"
+	"github.com/Project-HAMi/HAMi/pkg/util/nodelock"
 
 	spec "github.com/NVIDIA/k8s-device-plugin/api/config/v1"
 	cli "github.com/urfave/cli/v2"
@@ -70,6 +71,11 @@ func addFlags() []cli.Flag {
 			Name:  "custom-device-type",
 			Value: "", // NVIDIA H100 80GB HBM3
 			Usage: "the name of field for custom device type for debugger",
+		},
+		&cli.BoolFlag{
+			Name:  "node-lock-enabled",
+			Value: false, // default set nodeLock disabled
+			Usage: "enable nodeLock or not",
 		},
 		&cli.UintFlag{
 			Name:  "libcuda-log-level",
@@ -160,7 +166,11 @@ func generateDeviceConfigFromNvidia(cfg *spec.Config, c *cli.Context, flags []cl
 			if strings.Compare(n, "custom-device-type") == 0 {
 				updateFromCLIFlag(&util.CustomModelName, c, n)
 			}
+			if strings.Compare(n, "node-lock-enabled") == 0 {
+				updateFromCLIFlag(&util.NodeLockEnbaled, c, n)
+				nodelock.NodeLockEnbaled = *util.NodeLockEnbaled
 
+			}
 			if strings.Compare(n, "libcuda-log-level") == 0 {
 				updateFromCLIFlag(&util.LibcudaLogLevel, c, n)
 			}
