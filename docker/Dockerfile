@@ -8,7 +8,7 @@ ARG GOPROXY=https://goproxy.cn,direct
 RUN cd /k8s-vgpu && make all
 
 # enable libvgpu
-FROM nvidia/cuda:12.2.0-devel-ubuntu20.04 AS NVBUILD
+FROM $NVIDIA_IMAGE AS NVBUILD
 RUN apt-get -y update; apt-get -y install wget
 RUN apt-get -y install openssl libssl-dev
 WORKDIR /libvgpu
@@ -17,9 +17,9 @@ RUN tar -xf cmake-3.19.8-Linux-x86_64.tar.gz
 COPY ./libvgpu /libvgpu
 RUN cp /libvgpu/cmake-3.19.8-Linux-x86_64/bin/cmake /libvgpu/cmake-3.19.8-Linux-x86_64/bin/cmake3
 ENV PATH="/libvgpu/cmake-3.19.8-Linux-x86_64/bin:${PATH}"
-RUN rm -r ./build
 RUN bash ./build.sh
 
+# 镜像在咱们的仓库中有 切记从docker hub拉去的时候要加入--platform=linux/amd64
 FROM nvidia/cuda:12.4.1-base-ubuntu22.04
 ENV NVIDIA_DISABLE_REQUIRE="true"
 ENV NVIDIA_VISIBLE_DEVICES=all
