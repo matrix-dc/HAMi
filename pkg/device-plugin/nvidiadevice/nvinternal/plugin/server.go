@@ -292,10 +292,13 @@ func (plugin *NvidiaDevicePlugin) Allocate(ctx context.Context, reqs *kubeletdev
 	nodename := os.Getenv(util.NodeNameEnvName)
 	current, err := util.GetPendingPod(nodename)
 	if err != nil {
-		nodelock.ReleaseNodeLock(nodename, NodeLockNvidia)
+		klog.Errorf("get pending pod error: %v", err)
+		if err := nodelock.ReleaseNodeLock(nodename, NodeLockNvidia); err != nil {
+			klog.Errorf("release node lock error: %v", err)
+		}
 		return &kubeletdevicepluginv1beta1.AllocateResponse{}, err
 	}
-	klog.V(5).Infof("allocate pod name is %s/%s, annotation is %+v", current.Namespace, current.Name, current.Annotations)
+	klog.Infof("allocate pod name is %s/%s, annotation is %+v", current.Namespace, current.Name, current.Annotations)
 
 	for idx, req := range reqs.ContainerRequests {
 		// If the devices being allocated are replicas, then (conditionally)
