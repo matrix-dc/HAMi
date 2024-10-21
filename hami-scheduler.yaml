@@ -1,0 +1,574 @@
+---
+# Source: hami/templates/scheduler/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hami-scheduler-scheduler
+  namespace: "matrixdc-system"
+  labels:
+    app.kubernetes.io/component: "hami-scheduler"
+    helm.sh/chart: hami-2.0.0
+    app.kubernetes.io/name: hami
+    app.kubernetes.io/instance: hami-scheduler
+    app.kubernetes.io/version: "0.0.2"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: hami/templates/scheduler/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hami-scheduler-scheduler
+  namespace: "matrixdc-system"
+  labels:
+    app.kubernetes.io/component: hami-scheduler
+    helm.sh/chart: hami-2.0.0
+    app.kubernetes.io/name: hami
+    app.kubernetes.io/instance: hami-scheduler
+    app.kubernetes.io/version: "0.0.2"
+    app.kubernetes.io/managed-by: Helm
+data:
+  config.json: |
+    {
+        "kind": "Policy",
+        "apiVersion": "v1",
+        "extenders": [
+            {
+                "urlPrefix": "https://127.0.0.1:443",
+                "filterVerb": "filter",
+                "bindVerb": "bind",
+                "enableHttps": true,
+                "weight": 1,
+                "nodeCacheCapable": true,
+                "httpTimeout": 30000000000,
+                "tlsConfig": {
+                    "insecure": true
+                },
+                "managedResources": [
+                    {
+                        "name": "nvidia.com/gpu-h100",
+                        "ignoredByScheduler": true
+                    },
+                    {
+                        "name": "nvidia.com/gpu-h20",
+                        "ignoredByScheduler": true
+                    },
+                    {
+                        "name": "nvidia.com/gpu-4090",
+                        "ignoredByScheduler": true
+                    },
+                    {
+                        "name": "nvidia.com/gpumem",
+                        "ignoredByScheduler": true
+                    },
+                    {
+                        "name": "nvidia.com/gpucores",
+                        "ignoredByScheduler": true
+                    },
+                    {
+                        "name": "nvidia.com/gpumem-percentage",
+                        "ignoredByScheduler": true
+                    },
+                    {
+                        "name": "nvidia.com/priority",
+                        "ignoredByScheduler": true
+                    },
+                    {
+                        "name": "cambricon.com/vmlu",
+                        "ignoredByScheduler": true
+                    },
+                    {
+                        "name": "hygon.com/dcunum",
+                        "ignoredByScheduler": true
+                    },
+                    {
+                        "name": "hygon.com/dcumem",
+                        "ignoredByScheduler": true 
+                    },
+                    {
+                        "name": "hygon.com/dcucores",
+                        "ignoredByScheduler": true
+                    },
+                    {
+                        "name": "iluvatar.ai/vgpu",
+                        "ignoredByScheduler": true
+                    },
+                    {
+                        "name": "huawei.com/Ascend910-memory",
+                        "ignoredByScheduler": true
+                    },
+                    {
+                        "name": "huawei.com/Ascend910",
+                        "ignoredByScheduler": true
+                    }
+                ],
+                "ignoreable": false
+            }
+        ]
+    }
+---
+# Source: hami/templates/scheduler/configmapnew.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hami-scheduler-scheduler-newversion
+  namespace: "matrixdc-system"
+  labels:
+    app.kubernetes.io/component: hami-scheduler
+    helm.sh/chart: hami-2.0.0
+    app.kubernetes.io/name: hami
+    app.kubernetes.io/instance: hami-scheduler
+    app.kubernetes.io/version: "0.0.2"
+    app.kubernetes.io/managed-by: Helm
+data:
+  config.yaml: |
+    apiVersion: kubescheduler.config.k8s.io/v1
+    kind: KubeSchedulerConfiguration
+    leaderElection:
+      leaderElect: true
+      resourceName: hami-scheduler
+    profiles:
+    - schedulerName: hami-scheduler
+    extenders:
+    - urlPrefix: "https://127.0.0.1:443"
+      filterVerb: filter
+      bindVerb: bind
+      nodeCacheCapable: true
+      weight: 1
+      httpTimeout: 30s
+      enableHTTPS: true
+      tlsConfig:
+        insecure: true
+      managedResources:
+      - name: nvidia.com/gpu-h100
+        ignoredByScheduler: true
+      - name: nvidia.com/gpu-h20
+        ignoredByScheduler: true
+      - name: nvidia.com/gpu-4090
+        ignoredByScheduler: true
+      - name: nvidia.com/gpumem
+        ignoredByScheduler: true
+      - name: nvidia.com/gpucores
+        ignoredByScheduler: true
+      - name: nvidia.com/gpumem-percentage
+        ignoredByScheduler: true
+      - name: nvidia.com/priority
+        ignoredByScheduler: true
+      - name: cambricon.com/vmlu
+        ignoredByScheduler: true
+      - name: hygon.com/dcunum
+        ignoredByScheduler: true
+      - name: hygon.com/dcumem
+        ignoredByScheduler: true
+      - name: hygon.com/dcucores
+        ignoredByScheduler: true
+      - name: iluvatar.ai/vgpu
+        ignoredByScheduler: true
+      - name: huawei.com/Ascend910-memory
+        ignoredByScheduler: true
+      - name: huawei.com/Ascend910
+        ignoredByScheduler: true
+---
+# Source: hami/templates/scheduler/rolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: hami-scheduler-scheduler
+  labels:
+    app.kubernetes.io/component: "hami-scheduler"
+    helm.sh/chart: hami-2.0.0
+    app.kubernetes.io/name: hami
+    app.kubernetes.io/instance: hami-scheduler
+    app.kubernetes.io/version: "0.0.2"
+    app.kubernetes.io/managed-by: Helm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: hami-scheduler-scheduler
+    namespace: "matrixdc-system"
+---
+# Source: hami/templates/scheduler/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: hami-scheduler-scheduler
+  namespace: "matrixdc-system"
+  labels:
+    app.kubernetes.io/component: hami-scheduler
+    helm.sh/chart: hami-2.0.0
+    app.kubernetes.io/name: hami
+    app.kubernetes.io/instance: hami-scheduler
+    app.kubernetes.io/version: "0.0.2"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 443
+      targetPort: 443
+      protocol: TCP
+    - name: monitor
+      port: 31993
+      targetPort: 9395
+      protocol: TCP
+  selector:
+    app.kubernetes.io/component: hami-scheduler
+    app.kubernetes.io/name: hami
+    app.kubernetes.io/instance: hami-scheduler
+---
+# Source: hami/templates/scheduler/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hami-scheduler-scheduler
+  namespace: "matrixdc-system"
+  labels:
+    app.kubernetes.io/component: hami-scheduler
+    helm.sh/chart: hami-2.0.0
+    app.kubernetes.io/name: hami
+    app.kubernetes.io/instance: hami-scheduler
+    app.kubernetes.io/version: "0.0.2"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: hami-scheduler
+      app.kubernetes.io/name: hami
+      app.kubernetes.io/instance: hami-scheduler
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: hami-scheduler
+        app.kubernetes.io/name: hami
+        app.kubernetes.io/instance: hami-scheduler
+        hami.io/webhook: ignore
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: Exists
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: Exists
+      imagePullSecrets: 
+        []
+      serviceAccountName: hami-scheduler-scheduler
+      priorityClassName: system-node-critical
+      containers:
+        - name: kube-scheduler
+          image: harbor.123.125.194.106.nip.io:10443/system_containers/kube-scheduler:v1.29.5
+          imagePullPolicy: "IfNotPresent"
+          command:
+            - kube-scheduler
+            - --config=/config/config.yaml
+            - -v=4
+            - --leader-elect=true
+            - --leader-elect-resource-name=hami-scheduler
+            - --leader-elect-resource-namespace=matrixdc-system
+          volumeMounts:
+            - name: scheduler-config
+              mountPath: /config      
+        - name: vgpu-scheduler-extender
+          image: harbor.123.125.194.106.nip.io:10443/matrixdc-system/hami:v2.3.12-20240903-c278112
+          imagePullPolicy: "IfNotPresent"
+          command:
+            - scheduler
+            - --resource-name=nvidia.com/gpu-h100;nvidia.com/gpu-h20;nvidia.com/gpu-4090
+            - --resource-mem=nvidia.com/gpumem
+            - --resource-cores=nvidia.com/gpucores
+            - --resource-mem-percentage=nvidia.com/gpumem-percentage
+            - --resource-priority=nvidia.com/priority
+            - --http_bind=0.0.0.0:443
+            - --cert_file=/tls/tls.crt
+            - --key_file=/tls/tls.key
+            - --scheduler-name=hami-scheduler
+            - --metrics-bind-address=:9395
+            - --default-mem=0
+            - --default-gpu=1
+            - --default-cores=0
+            - --iluvatar-memory=iluvatar.ai/vcuda-memory
+            - --iluvatar-cores=iluvatar.ai/vcuda-core
+            - --cambricon-mlu-name=cambricon.com/vmlu
+            - --cambricon-mlu-memory=cambricon.com/mlu.smlu.vmemory
+            - --cambricon-mlu-cores=cambricon.com/mlu.smlu.vcore
+            - --ascend-name=huawei.com/Ascend910
+            - --ascend-memory=huawei.com/Ascend910-memory
+            - --overwrite-env=false
+            - --node-scheduler-policy=binpack
+            - --gpu-scheduler-policy=spread
+            - --debug
+            - -v=5
+          ports:
+            - name: http
+              containerPort: 443
+              protocol: TCP
+          volumeMounts:
+            - name: tls-config
+              mountPath: /tls
+      volumes:
+        - name: tls-config
+          secret:
+            secretName: hami-scheduler-scheduler-tls
+        - name: scheduler-config
+          configMap:
+            name: hami-scheduler-scheduler-newversion
+---
+# Source: hami/templates/scheduler/webhook.yaml
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: zzz-hami-scheduler-webhook
+webhooks:
+  - admissionReviewVersions:
+    - v1beta1
+    clientConfig:
+      service:
+        name: hami-scheduler-scheduler
+        namespace: matrixdc-system
+        path: /webhook
+        port: 443
+    failurePolicy: Ignore
+    matchPolicy: Equivalent
+    name: vgpu.hami.io
+    namespaceSelector:
+      matchExpressions:
+      - key: hami.io/webhook
+        operator: NotIn
+        values:
+        - ignore
+    objectSelector:
+      matchExpressions:
+      - key: hami.io/webhook
+        operator: NotIn
+        values:
+        - ignore
+    reinvocationPolicy: Never
+    rules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+        resources:
+          - pods
+        scope: '*'
+    sideEffects: None
+    timeoutSeconds: 10
+---
+# Source: hami/templates/scheduler/job-patch/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hami-scheduler-admission
+  namespace: "matrixdc-system"
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    helm.sh/chart: hami-2.0.0
+    app.kubernetes.io/name: hami
+    app.kubernetes.io/instance: hami-scheduler
+    app.kubernetes.io/version: "0.0.2"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: admission-webhook
+---
+# Source: hami/templates/scheduler/job-patch/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: hami-scheduler-admission
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    helm.sh/chart: hami-2.0.0
+    app.kubernetes.io/name: hami
+    app.kubernetes.io/instance: hami-scheduler
+    app.kubernetes.io/version: "0.0.2"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: admission-webhook
+rules:
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      #- validatingwebhookconfigurations
+      - mutatingwebhookconfigurations
+    verbs:
+      - get
+      - update
+---
+# Source: hami/templates/scheduler/job-patch/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name:  hami-scheduler-admission
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    helm.sh/chart: hami-2.0.0
+    app.kubernetes.io/name: hami
+    app.kubernetes.io/instance: hami-scheduler
+    app.kubernetes.io/version: "0.0.2"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: admission-webhook
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: hami-scheduler-admission
+subjects:
+  - kind: ServiceAccount
+    name: hami-scheduler-admission
+    namespace: "matrixdc-system"
+---
+# Source: hami/templates/scheduler/job-patch/role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name:  hami-scheduler-admission
+  namespace: "matrixdc-system"
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    helm.sh/chart: hami-2.0.0
+    app.kubernetes.io/name: hami
+    app.kubernetes.io/instance: hami-scheduler
+    app.kubernetes.io/version: "0.0.2"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: admission-webhook
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - create
+---
+# Source: hami/templates/scheduler/job-patch/rolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: hami-scheduler-admission
+  namespace: "matrixdc-system"
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    helm.sh/chart: hami-2.0.0
+    app.kubernetes.io/name: hami
+    app.kubernetes.io/instance: hami-scheduler
+    app.kubernetes.io/version: "0.0.2"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: admission-webhook
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: hami-scheduler-admission
+subjects:
+  - kind: ServiceAccount
+    name: hami-scheduler-admission
+    namespace: "matrixdc-system"
+---
+# Source: hami/templates/scheduler/job-patch/job-createSecret.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: hami-scheduler-admission-create
+  namespace: "matrixdc-system"
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    helm.sh/chart: hami-2.0.0
+    app.kubernetes.io/name: hami
+    app.kubernetes.io/instance: hami-scheduler
+    app.kubernetes.io/version: "0.0.2"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: admission-webhook
+spec:
+  template:
+    metadata:
+      name: hami-scheduler-admission-create
+      labels:
+        helm.sh/chart: hami-2.0.0
+        app.kubernetes.io/name: hami
+        app.kubernetes.io/instance: hami-scheduler
+        app.kubernetes.io/version: "0.0.2"
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/component: admission-webhook
+        hami.io/webhook: ignore
+    spec:
+      imagePullSecrets: 
+        []
+      containers:
+        - name: create
+          image: harbor.123.125.194.106.nip.io:10443/matrixdc-system/kube-webhook-certgen:v1.1.1
+          imagePullPolicy: Always
+          args:
+            - create
+            - --cert-name=tls.crt
+            - --key-name=tls.key
+            - --host=hami-scheduler-scheduler.matrixdc-system.svc,127.0.0.1
+            - --namespace=matrixdc-system
+            - --secret-name=hami-scheduler-scheduler-tls
+      restartPolicy: OnFailure
+      serviceAccountName: hami-scheduler-admission
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 2000
+---
+# Source: hami/templates/scheduler/job-patch/job-patchWebhook.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: hami-scheduler-admission-patch
+  namespace: "matrixdc-system"
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    helm.sh/chart: hami-2.0.0
+    app.kubernetes.io/name: hami
+    app.kubernetes.io/instance: hami-scheduler
+    app.kubernetes.io/version: "0.0.2"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: admission-webhook
+spec:
+  template:
+    metadata:
+      name: hami-scheduler-admission-patch
+      labels:
+        helm.sh/chart: hami-2.0.0
+        app.kubernetes.io/name: hami
+        app.kubernetes.io/instance: hami-scheduler
+        app.kubernetes.io/version: "0.0.2"
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/component: admission-webhook
+        hami.io/webhook: ignore
+    spec:
+      imagePullSecrets: 
+        []
+      containers:
+        - name: patch
+          image: harbor.123.125.194.106.nip.io:10443/matrixdc-system/kube-webhook-certgen:v1.1.1
+          imagePullPolicy: Always
+          args:
+            - patch
+            - --webhook-name=zzz-hami-scheduler-webhook
+            - --namespace=matrixdc-system
+            - --patch-validating=false
+            - --secret-name=hami-scheduler-scheduler-tls
+      restartPolicy: OnFailure
+      serviceAccountName: hami-scheduler-admission
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 2000

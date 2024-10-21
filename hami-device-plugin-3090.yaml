@@ -1,0 +1,251 @@
+---
+# Source: hami/templates/device-plugin/monitorserviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hami-device-plugin-3090-device-plugin
+  namespace: "matrixdc-system"
+  labels:
+    app.kubernetes.io/component: "hami-device-plugin"
+    helm.sh/chart: hami-2.0.0
+    app.kubernetes.io/name: hami
+    app.kubernetes.io/instance: hami-device-plugin-3090
+    app.kubernetes.io/version: "0.0.2"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: hami/templates/device-plugin/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hami-device-plugin-3090-device-plugin
+  namespace: "matrixdc-system"
+  labels:
+    app.kubernetes.io/component: hami-device-plugin
+    helm.sh/chart: hami-2.0.0
+    app.kubernetes.io/name: hami
+    app.kubernetes.io/instance: hami-device-plugin-3090
+    app.kubernetes.io/version: "0.0.2"
+    app.kubernetes.io/managed-by: Helm
+data:
+  config.json: |
+    {
+        "nodeconfig": [
+            {
+                "name": "m5-cloudinfra-online02",
+                "devicememoryscaling": 1,
+                "devicesplitcount": 1,
+                "migstrategy":"none"
+            }
+        ]
+    }
+---
+# Source: hami/templates/device-plugin/monitorrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name:  hami-device-plugin-3090-device-plugin-monitor
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - create
+      - watch
+      - list
+      - update
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+      - update
+      - list
+      - patch
+---
+# Source: hami/templates/device-plugin/monitorrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: hami-device-plugin-3090-device-plugin
+  labels:
+    app.kubernetes.io/component: "hami-device-plugin"
+    helm.sh/chart: hami-2.0.0
+    app.kubernetes.io/name: hami
+    app.kubernetes.io/instance: hami-device-plugin-3090
+    app.kubernetes.io/version: "0.0.2"
+    app.kubernetes.io/managed-by: Helm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  #name: cluster-admin
+  name: hami-device-plugin-3090-device-plugin-monitor
+subjects:
+  - kind: ServiceAccount
+    name: hami-device-plugin-3090-device-plugin
+    namespace: "matrixdc-system"
+---
+# Source: hami/templates/device-plugin/monitorservice.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: hami-device-plugin-3090-device-plugin-monitor
+  namespace: "matrixdc-system"
+  labels:
+    app.kubernetes.io/component: hami-device-plugin
+    helm.sh/chart: hami-2.0.0
+    app.kubernetes.io/name: hami
+    app.kubernetes.io/instance: hami-device-plugin-3090
+    app.kubernetes.io/version: "0.0.2"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    app.kubernetes.io/component: hami-device-plugin
+  type: ClusterIP
+  ports:
+    - name: monitorport
+      port: 31992
+      targetPort: 9394
+---
+# Source: hami/templates/device-plugin/daemonsetnvidia.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: hami-device-plugin-3090-device-plugin
+  namespace: "matrixdc-system"
+  labels:
+    app.kubernetes.io/component: hami-device-plugin
+    helm.sh/chart: hami-2.0.0
+    app.kubernetes.io/name: hami
+    app.kubernetes.io/instance: hami-device-plugin-3090
+    app.kubernetes.io/version: "0.0.2"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: hami-device-plugin
+      app.kubernetes.io/name: hami
+      app.kubernetes.io/instance: hami-device-plugin-3090
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: hami-device-plugin
+        hami.io/webhook: ignore
+        app.kubernetes.io/name: hami
+        app.kubernetes.io/instance: hami-device-plugin-3090
+    spec:
+      imagePullSecrets: 
+        []
+      # serviceAccountName:
+      serviceAccountName: hami-device-plugin-3090-device-plugin
+      priorityClassName: system-node-critical
+      hostPID: true
+      hostNetwork: true
+      containers:
+        - name: device-plugin
+          image: images.neolink-ai.com/matrixdc-system/hami:v2.3.12-20240903-c278112
+          imagePullPolicy: "IfNotPresent"
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh","-c", "cp -f /k8s-vgpu/lib/nvidia/* /usr/local/vgpu/"]
+          command:
+            - nvidia-device-plugin
+            - --resource-name=nvidia.com/gpu-3090
+            - --mig-strategy=none
+            - --device-memory-scaling=1
+            - --device-cores-scaling=1
+            - --device-split-count=1
+            - --disable-core-limit=false
+            - -v=false
+            - --custom-device-type=3090
+            - --libcuda-log-level=0
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: NVIDIA_MIG_MONITOR_DEVICES
+              value: all
+            - name: HOOK_PATH
+              value: /usr/local
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+              add: ["SYS_ADMIN"]
+          volumeMounts:
+            - name: device-plugin
+              mountPath: /var/lib/kubelet/device-plugins
+            - name: lib
+              mountPath: /usr/local/vgpu
+            - name: usrbin
+              mountPath: /usrbin
+            - name: deviceconfig
+              mountPath: /config
+            - name: hosttmp
+              mountPath: /tmp
+        - name: vgpu-monitor
+          image: images.neolink-ai.com/matrixdc-system/hami:v2.3.12-20240903-c278112
+          imagePullPolicy: "IfNotPresent"
+          command: ["vGPUmonitor"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+              add: ["SYS_ADMIN"]
+          env:
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
+            - name: NVIDIA_MIG_MONITOR_DEVICES
+              value: all
+            - name: HOOK_PATH
+              value: /usr/local/vgpu              
+          volumeMounts:
+            - name: ctrs
+              mountPath: /usr/local/vgpu/containers
+            - name: dockers
+              mountPath: /run/docker
+            - name: containerds
+              mountPath: /run/containerd
+            - name: sysinfo
+              mountPath: /sysinfo
+            - name: hostvar
+              mountPath: /hostvar
+      volumes:
+        - name: ctrs
+          hostPath:
+            path: /usr/local/vgpu/containers
+        - name: hosttmp
+          hostPath:
+            path: /tmp
+        - name: dockers
+          hostPath:
+            path: /run/docker
+        - name: containerds
+          hostPath:
+            path: /run/containerd
+        - name: device-plugin
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
+        - name: lib
+          hostPath:
+            path: /usr/local/vgpu
+        - name: usrbin
+          hostPath:
+            path: /usr/bin
+        - name: sysinfo
+          hostPath:
+            path: /sys
+        - name: hostvar
+          hostPath:
+            path: /var
+        - name: deviceconfig
+          configMap:
+            name: hami-device-plugin-3090-device-plugin
+      nodeSelector: 
+        gpu: "on"
+        nvidia.com/gpu-3090: "true"
