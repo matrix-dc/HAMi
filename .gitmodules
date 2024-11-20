@@ -1,4 +1,4 @@
 [submodule "libvgpu"]
 	path = libvgpu
-	url = https://github.com/matrix-dc/HAMi-core.git
+	url = https://github.com/carolove/HAMi-core.git
 	branch = release-2.3.12

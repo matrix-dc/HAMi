@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: {{ include "hami-vgpu.device-plugin" . }}
+  namespace: {{ .Release.Namespace | quote }}
   labels:
     app.kubernetes.io/component: hami-device-plugin
     {{- include "hami-vgpu.labels" . | nindent 4 }}

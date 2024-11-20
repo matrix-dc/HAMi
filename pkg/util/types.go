@@ -75,6 +75,7 @@ var (
 	RuntimeSocketFlag   string
 	DisableCoreLimit    *bool
 	CustomModelName     *string
+	NodeLockEnbaled     *bool
 	LibcudaLogLevel     *uint // set libvgpu LIBCUDA_LOG_LEVEL
 )
 
